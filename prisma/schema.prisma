@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Definição dos cargos fixos no sistema
+enum Role {
+  SYSTEM_ADMIN // Dono do sistema (você)
+  COMPANY_OWNER // Dono da empresa que contrata o sistema
+  SELLER // Vendedor (pode criar produtos e movimentar estoque)
+  EMPLOYEE // Funcionário (só visualiza)
+}
+
+model Company {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  users     User[]
+  products  Product[]
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  password       String
+  role           Role // Cargo fixo do usuário
+  company        Company         @relation(fields: [companyId], references: [id])
+  companyId      String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  stockMovements StockMovement[]
+}
+
+model Product {
+  id             String          @id @default(uuid())
+  name           String
+  quantity       Int             @default(0)
+  price          Decimal         @default(0.0)
+  company        Company         @relation(fields: [companyId], references: [id])
+  companyId      String
+  stockMovements StockMovement[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  type      String // 'IN' para entrada, 'OUT' para saída
+  quantity  Int
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
